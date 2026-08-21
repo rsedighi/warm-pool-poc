@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A repeatable cold-versus-warm demonstration using an application-managed fixed pool of Cloudflare Containers.">
+    <title>Warm Pool Control Room</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#controls">Skip to controls</a>
+
+    <header class="hero">
+      <div class="hero__eyebrow">
+        <span>Workers Containers</span>
+        <span class="health-badge" id="health-badge">Checking Worker</span>
+      </div>
+
+      <div class="hero__grid">
+        <div class="hero__copy">
+          <p class="kicker">Fixed pool / repeatable experiment</p>
+          <h1>Pay startup cost <em>before</em> the job.</h1>
+          <p class="hero__lede">
+            Stop it. Observe a new boot. Prewarm all three processes in parallel.
+            Then route work across the already-running set.
+          </p>
+        </div>
+
+        <div class="pool-number" aria-label="Fixed pool size: 3 containers">
+          <span class="pool-number__label">Pool size</span>
+          <strong>03</strong>
+          <span>lite instances</span>
+        </div>
+      </div>
+
+      <blockquote class="product-truth">
+        Cloudflare Containers does not currently provide managed stateless autoscaling or a managed warm-pool mode. This POC implements a fixed warm pool in application code, prewarms its members, and routes work across them.
+      </blockquote>
+
+      <div class="architecture-strip" aria-label="Request path">
+        <span>Browser</span><b aria-hidden="true">→</b>
+        <span>Worker</span><b aria-hidden="true">→</b>
+        <span>Fixed selector</span><b aria-hidden="true">→</b>
+        <span>3 Container DOs</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="control-deck" id="controls" aria-labelledby="controls-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-index">01 / Control deck</p>
+            <h2 id="controls-title">Run the sequence</h2>
+          </div>
+          <div class="action-status" id="action-status" role="status" aria-live="polite">
+            <span class="status-light" aria-hidden="true"></span>
+            <span id="action-text">Ready for a demo</span>
+          </div>
+        </div>
+
+        <div class="controls" aria-label="Pool and job controls">
+          <button class="control control--stop" id="stop-pool" type="button">
+            <span>01</span> Stop Pool
+          </button>
+          <button class="control" id="send-job" type="button">
+            <span>02</span> Send One Job
+          </button>
+          <button class="control control--accent" id="prewarm-pool" type="button">
+            <span>03</span> Prewarm Pool
+          </button>
+          <button class="control control--dark" id="run-burst" type="button">
+            <span>04</span> Run 12 Jobs
+          </button>
+          <button class="control control--quiet" id="clear-results" type="button">
+            Clear Results
+          </button>
+        </div>
+
+        <aside class="simulation-note">
+          <strong>Transparent simulation</strong>
+          <span><b>3.0 s</b> simulated application initialization before port 8080 opens</span>
+          <span><b>500 ms</b> simulated work per job</span>
+          <span>This is not a benchmark of Cloudflare's native container startup time.</span>
+        </aside>
+      </section>
+
+      <section class="summary" aria-labelledby="summary-title">
+        <div class="section-heading section-heading--compact">
+          <div>
+            <p class="section-index">02 / Timing board</p>
+            <h2 id="summary-title">Observed from this browser</h2>
+          </div>
+        </div>
+
+        <div class="metric-grid">
+          <article class="metric metric--cold">
+            <p>Cold / new boot</p>
+            <strong id="cold-latency">—</strong>
+            <span id="cold-detail">No new boot observed</span>
+          </article>
+          <article class="metric metric--warm">
+            <p>Warm / reused</p>
+            <strong id="warm-latency">—</strong>
+            <span id="warm-detail">No reused boot observed</span>
+          </article>
+          <article class="metric">
+            <p>Latest prewarm</p>
+            <strong id="prewarm-latency">—</strong>
+            <span id="prewarm-detail">Start all 3 in parallel</span>
+          </article>
+          <article class="metric">
+            <p>Completed jobs</p>
+            <strong id="job-total">0</strong>
+            <span id="job-detail">0 errors</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="pool-board" aria-labelledby="pool-title">
+        <div class="section-heading section-heading--compact">
+          <div>
+            <p class="section-index">03 / Process identity</p>
+            <h2 id="pool-title">The three pinned members</h2>
+          </div>
+          <p class="section-aside">A stable boot ID proves process reuse.</p>
+        </div>
+
+        <div class="member-grid" id="member-grid">
+          <article class="member" data-member="instance-0">
+            <div class="member__head"><span class="member-light"></span><h3>instance-0</h3><span class="member-state">Unknown</span></div>
+            <dl>
+              <div><dt>Boot</dt><dd class="member-boot">—</dd></div>
+              <div><dt>Host</dt><dd class="member-host">—</dd></div>
+              <div><dt>Started</dt><dd class="member-started">—</dd></div>
+              <div><dt>Ready in</dt><dd class="member-timing">—</dd></div>
+            </dl>
+          </article>
+          <article class="member" data-member="instance-1">
+            <div class="member__head"><span class="member-light"></span><h3>instance-1</h3><span class="member-state">Unknown</span></div>
+            <dl>
+              <div><dt>Boot</dt><dd class="member-boot">—</dd></div>
+              <div><dt>Host</dt><dd class="member-host">—</dd></div>
+              <div><dt>Started</dt><dd class="member-started">—</dd></div>
+              <div><dt>Ready in</dt><dd class="member-timing">—</dd></div>
+            </dl>
+          </article>
+          <article class="member" data-member="instance-2">
+            <div class="member__head"><span class="member-light"></span><h3>instance-2</h3><span class="member-state">Unknown</span></div>
+            <dl>
+              <div><dt>Boot</dt><dd class="member-boot">—</dd></div>
+              <div><dt>Host</dt><dd class="member-host">—</dd></div>
+              <div><dt>Started</dt><dd class="member-started">—</dd></div>
+              <div><dt>Ready in</dt><dd class="member-timing">—</dd></div>
+            </dl>
+          </article>
+        </div>
+      </section>
+
+      <section class="distribution" aria-labelledby="distribution-title">
+        <div class="section-heading section-heading--compact">
+          <div>
+            <p class="section-index">04 / Random routing</p>
+            <h2 id="distribution-title">Jobs grouped by boot ID</h2>
+          </div>
+          <p class="section-aside">Random, not round robin.</p>
+        </div>
+        <div class="distribution-list" id="distribution-list">
+          <p class="empty-copy">Run jobs to reveal distribution across processes.</p>
+        </div>
+      </section>
+
+      <section class="errors" id="errors" aria-labelledby="errors-title" hidden>
+        <div class="section-heading section-heading--compact">
+          <div>
+            <p class="section-index">Attention</p>
+            <h2 id="errors-title">API errors</h2>
+          </div>
+        </div>
+        <ul id="error-list" aria-live="assertive"></ul>
+      </section>
+
+      <section class="results" aria-labelledby="results-title">
+        <div class="section-heading section-heading--compact">
+          <div>
+            <p class="section-index">05 / Job ledger</p>
+            <h2 id="results-title">Every request, one row</h2>
+          </div>
+          <p class="section-aside">Timings include browser and network overhead.</p>
+        </div>
+
+        <p class="empty-copy" id="results-empty">No jobs yet. Stop the pool and send one job to begin.</p>
+        <div class="table-wrap" id="results-table-wrap" hidden>
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Path</th>
+                <th scope="col">Job</th>
+                <th scope="col">Browser</th>
+                <th scope="col">Worker</th>
+                <th scope="col">Work</th>
+                <th scope="col">Instance</th>
+                <th scope="col">Boot ID</th>
+                <th scope="col">Started</th>
+                <th scope="col">Count</th>
+              </tr>
+            </thead>
+            <tbody id="results-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Application-managed fixed pool · no autoscaling · no persistent job state</p>
+      <p>Processes may still be replaced by the platform; warm availability is not an uptime guarantee.</p>
+    </footer>
+  </body>
+</html>
