@@ -1182,7 +1182,7 @@ sequenceDiagram
     API->>DB: Claim bounded generation publish attempt
     API->>Queue: Send small job-reference message
     alt Queue send succeeds
-        API->>DB: Mark published; queue only if still accepted
+        API->>DB: Mark published and conditionally set queued
     else Queue send fails
         API->>DB: Leave outbox row for repair
     end
